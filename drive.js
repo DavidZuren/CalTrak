@@ -1,7 +1,8 @@
 const DRIVE_FILE_NAME = "CalTrak.json";
 const DRIVE_FILE_ID_KEY = "calorie-tracker-drive-file-id";
 const CLIENT_ID_KEY = "calorie-tracker-google-client-id";
-const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
+const DRIVE_SCOPE =
+  "https://www.googleapis.com/auth/drive.file openid email profile";
 
 function getClientId() {
   const fromConfig = String(window.CALTRAK_GOOGLE_CLIENT_ID || "").trim();
@@ -59,9 +60,14 @@ window.CalTrakDrive = {
         try {
           this.email = await this.fetchEmail();
           this.onStatus(`Signed in as ${this.email}`);
+        } catch (error) {
+          this.email = null;
+          this.onStatus("Signed in with Google.");
+        }
+        try {
           await this.onSignedIn();
         } catch (error) {
-          this.onStatus(error.message || "Could not finish sign-in.");
+          this.onStatus(error.message || "Drive sync failed.");
         }
       },
     });
@@ -93,7 +99,7 @@ window.CalTrakDrive = {
     const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
       headers: { Authorization: `Bearer ${this.token}` },
     });
-    if (!response.ok) throw new Error("Could not read Google account.");
+    if (!response.ok) return "Google user";
     const data = await response.json();
     return data.email || "Google user";
   },

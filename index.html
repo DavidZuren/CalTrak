@@ -16,9 +16,31 @@
   <body>
     <div class="app">
       <header class="top">
-        <p class="eyebrow">Daily log</p>
-        <h1>Calorie Tracker</h1>
+        <div>
+          <p class="eyebrow">Daily log</p>
+          <h1>Calorie Tracker</h1>
+        </div>
       </header>
+
+      <section class="account-card" aria-label="Google Drive backup">
+        <div class="account-row">
+          <p id="account-status" class="account-status">Data is saved on this device only.</p>
+          <button type="button" id="google-auth-btn" class="auth-btn">Sign in with Google</button>
+        </div>
+        <details id="drive-setup" class="drive-setup">
+          <summary>Set up Google Drive</summary>
+          <p>
+            Create an OAuth client ID in Google Cloud, enable the Drive API, then paste the
+            client ID below. Use this site as an authorized JavaScript origin:
+            <code>https://davidzuren.github.io</code>
+          </p>
+          <label class="field">
+            <span>Google client ID</span>
+            <input id="client-id-input" type="text" placeholder="123.apps.googleusercontent.com" autocomplete="off" />
+          </label>
+          <button type="button" id="save-client-id" class="add-btn setup-save">Save client ID</button>
+        </details>
+      </section>
 
       <section class="date-bar" aria-label="Choose day">
         <button type="button" id="prev-day" class="icon-btn" aria-label="Previous day">‹</button>
@@ -56,6 +78,9 @@
         <ul id="history-list"></ul>
       </section>
     </div>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="./config.js"></script>
+    <script src="./drive.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>

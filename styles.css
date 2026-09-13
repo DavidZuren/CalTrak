@@ -36,6 +36,67 @@ body {
   padding: 20px 4px 8px;
 }
 
+.account-card {
+  background: var(--card);
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+
+.account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.account-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.auth-btn,
+.setup-save {
+  flex-shrink: 0;
+}
+
+.auth-btn {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: var(--green);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  border: 0;
+  cursor: pointer;
+}
+
+.drive-setup {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.drive-setup p {
+  margin: 8px 0 12px;
+  line-height: 1.45;
+}
+
+.drive-setup code {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--ink);
+}
+
+.setup-save {
+  margin-top: 10px;
+}
+
 .eyebrow {
   margin: 0 0 4px;
   color: var(--green);
@@ -68,6 +129,7 @@ h2 {
 .icon-btn,
 .date-label,
 .add-btn,
+.auth-btn,
 .delete-btn {
   font: inherit;
   border: 0;

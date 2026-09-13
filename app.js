@@ -53,6 +53,7 @@ function loadDays() {
 
 function saveDays(days) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(days));
+  window.CalTrakDrive.scheduleSave(days);
 }
 
 function dayTotal(entries) {
@@ -199,8 +200,64 @@ addForm.addEventListener("submit", (event) => {
   foodNameInput.focus();
 });
 
+const accountStatus = document.getElementById("account-status");
+const googleAuthBtn = document.getElementById("google-auth-btn");
+const clientIdInput = document.getElementById("client-id-input");
+const saveClientIdBtn = document.getElementById("save-client-id");
+const driveSetup = document.getElementById("drive-setup");
+
+function setAccountStatus(text) {
+  accountStatus.textContent = text;
+}
+
+function refreshAuthButton() {
+  googleAuthBtn.textContent = window.CalTrakDrive.token ? "Sign out" : "Sign in with Google";
+}
+
+window.CalTrakDrive.onStatus = (text) => {
+  setAccountStatus(text);
+  refreshAuthButton();
+};
+
+window.CalTrakDrive.onSignedIn = async () => {
+  try {
+    state.days = await window.CalTrakDrive.pullAndMerge(state.days);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.days));
+    render();
+  } catch (error) {
+    setAccountStatus(error.message || "Drive sync failed.");
+  }
+};
+
+googleAuthBtn.addEventListener("click", () => {
+  if (window.CalTrakDrive.token) {
+    window.CalTrakDrive.signOut();
+    refreshAuthButton();
+    return;
+  }
+  window.CalTrakDrive.signIn();
+});
+
+saveClientIdBtn.addEventListener("click", () => {
+  const id = clientIdInput.value.trim();
+  if (!id) return;
+  window.CalTrakDrive.saveClientId(id);
+  window.CalTrakDrive.init();
+  setAccountStatus("Client ID saved. Sign in with Google to back up.");
+});
+
+clientIdInput.value = window.CalTrakDrive.clientId();
+if (window.CalTrakDrive.clientId()) {
+  driveSetup.open = false;
+}
+
+window.addEventListener("load", () => {
+  window.CalTrakDrive.init();
+});
+
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js").catch(() => {});
 }
 
 render();
+refreshAuthButton();

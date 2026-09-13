@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1f6f4a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Calories" />
+    <title>Calorie Tracker</title>
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+    <link rel="icon" href="./icons/icon-192.png" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="top">
+        <p class="eyebrow">Daily log</p>
+        <h1>Calorie Tracker</h1>
+      </header>
+
+      <section class="date-bar" aria-label="Choose day">
+        <button type="button" id="prev-day" class="icon-btn" aria-label="Previous day">‹</button>
+        <button type="button" id="date-label" class="date-label" aria-label="Jump to today"></button>
+        <button type="button" id="next-day" class="icon-btn" aria-label="Next day">›</button>
+      </section>
+      <input type="date" id="date-picker" class="sr-only" />
+
+      <section class="total-card">
+        <p class="total-label">Calories today</p>
+        <p class="total-value" id="day-total">0</p>
+        <p class="total-meta" id="entry-count">No entries yet</p>
+      </section>
+
+      <form id="add-form" class="add-form" autocomplete="off">
+        <label class="field grow">
+          <span>Food</span>
+          <input id="food-name" name="name" type="text" placeholder="Chicken salad" maxlength="80" />
+        </label>
+        <label class="field calories">
+          <span>Calories</span>
+          <input id="food-calories" name="calories" type="number" inputmode="numeric" min="1" max="20000" required placeholder="450" />
+        </label>
+        <button type="submit" class="add-btn">Add</button>
+      </form>
+
+      <section class="entries" aria-labelledby="entries-heading">
+        <h2 id="entries-heading">Entries</h2>
+        <ul id="entry-list"></ul>
+        <p id="empty-state" class="empty">Log a meal or snack to start this day.</p>
+      </section>
+
+      <section class="history" aria-labelledby="history-heading">
+        <h2 id="history-heading">Recent days</h2>
+        <ul id="history-list"></ul>
+      </section>
+    </div>
+    <script src="./app.js"></script>
+  </body>
+</html>

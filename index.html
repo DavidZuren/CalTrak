@@ -18,7 +18,7 @@
       <header class="top">
         <div>
           <p class="eyebrow">Daily log</p>
-          <h1>Calorie Tracker</h1>
+          <h1>CalTrak</h1>
         </div>
       </header>
 
@@ -49,7 +49,22 @@
       </section>
       <input type="date" id="date-picker" class="sr-only" />
 
-      <section class="total-card">
+      <section class="limit-card" aria-label="Daily calorie limit">
+        <label class="field grow">
+          <span>Daily calorie limit</span>
+          <input
+            id="calorie-limit-input"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="20000"
+            placeholder="2000"
+          />
+        </label>
+        <button type="button" id="save-calorie-limit" class="add-btn">Save limit</button>
+      </section>
+
+      <section class="total-card" id="total-card">
         <p class="total-label">Calories today</p>
         <p class="total-value" id="day-total">0</p>
         <p class="total-meta" id="entry-count">No entries yet</p>

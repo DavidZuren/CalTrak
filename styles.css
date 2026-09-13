@@ -7,6 +7,7 @@
   --green: #1f6f4a;
   --green-dark: #165538;
   --danger: #b42318;
+  --danger-dark: #8a1a12;
   --shadow: 0 10px 30px rgba(28, 36, 29, 0.08);
 }
 
@@ -156,12 +157,28 @@ h2 {
   font-weight: 700;
 }
 
+.limit-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: end;
+  background: var(--card);
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+
 .total-card {
   background: linear-gradient(160deg, var(--green) 0%, var(--green-dark) 100%);
   color: #fff;
   border-radius: 20px;
   padding: 22px 20px;
   box-shadow: var(--shadow);
+}
+
+.total-card.over-limit {
+  background: linear-gradient(160deg, var(--danger) 0%, var(--danger-dark) 100%);
 }
 
 .total-label,
@@ -298,7 +315,12 @@ ul {
     grid-template-columns: 1fr 88px;
   }
 
-  .add-btn {
+  .limit-card {
+    grid-template-columns: 1fr;
+  }
+
+  .add-form .add-btn,
+  .limit-card .add-btn {
     grid-column: 1 / -1;
   }
 }

@@ -1,4 +1,5 @@
 const STORAGE_KEY = "calorie-tracker-v1";
+const LIMIT_KEY = "calorie-tracker-daily-limit";
 
 const prevDayBtn = document.getElementById("prev-day");
 const nextDayBtn = document.getElementById("next-day");
@@ -12,6 +13,9 @@ const foodCaloriesInput = document.getElementById("food-calories");
 const entryList = document.getElementById("entry-list");
 const emptyState = document.getElementById("empty-state");
 const historyList = document.getElementById("history-list");
+const totalCard = document.getElementById("total-card");
+const calorieLimitInput = document.getElementById("calorie-limit-input");
+const saveCalorieLimitBtn = document.getElementById("save-calorie-limit");
 
 function todayKey() {
   const now = new Date();
@@ -56,6 +60,19 @@ function saveDays(days) {
   window.CalTrakDrive.scheduleSave(days);
 }
 
+function loadLimit() {
+  const value = Number.parseInt(localStorage.getItem(LIMIT_KEY) || "", 10);
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function saveLimit(limit) {
+  if (limit == null) {
+    localStorage.removeItem(LIMIT_KEY);
+    return;
+  }
+  localStorage.setItem(LIMIT_KEY, String(limit));
+}
+
 function dayTotal(entries) {
   return entries.reduce((sum, entry) => sum + entry.calories, 0);
 }
@@ -63,6 +80,7 @@ function dayTotal(entries) {
 const state = {
   selectedDay: todayKey(),
   days: loadDays(),
+  calorieLimit: loadLimit(),
 };
 
 function entriesFor(day) {
@@ -76,10 +94,24 @@ function render() {
   dateLabelBtn.textContent = formatDayLabel(state.selectedDay);
   datePicker.value = state.selectedDay;
   dayTotalEl.textContent = String(total);
+  totalCard.classList.toggle(
+    "over-limit",
+    Boolean(state.calorieLimit) && total >= state.calorieLimit
+  );
   entryCountEl.textContent =
     entries.length === 0
       ? "No entries yet"
       : `${entries.length} ${entries.length === 1 ? "entry" : "entries"}`;
+  if (state.calorieLimit) {
+    const remaining = state.calorieLimit - total;
+    if (remaining > 0) {
+      entryCountEl.textContent += ` · ${remaining} under limit`;
+    } else if (remaining === 0) {
+      entryCountEl.textContent += " · at limit";
+    } else {
+      entryCountEl.textContent += ` · ${Math.abs(remaining)} over limit`;
+    }
+  }
 
   entryList.replaceChildren();
   emptyState.classList.toggle("hidden", entries.length > 0);
@@ -199,6 +231,16 @@ addForm.addEventListener("submit", (event) => {
   addForm.reset();
   foodNameInput.focus();
 });
+
+saveCalorieLimitBtn.addEventListener("click", () => {
+  const value = Number.parseInt(calorieLimitInput.value, 10);
+  state.calorieLimit = Number.isFinite(value) && value > 0 ? value : null;
+  saveLimit(state.calorieLimit);
+  calorieLimitInput.value = state.calorieLimit ? String(state.calorieLimit) : "";
+  render();
+});
+
+calorieLimitInput.value = state.calorieLimit ? String(state.calorieLimit) : "";
 
 const accountStatus = document.getElementById("account-status");
 const googleAuthBtn = document.getElementById("google-auth-btn");

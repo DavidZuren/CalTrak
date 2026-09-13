@@ -1,8 +1,10 @@
 const DRIVE_FILE_NAME = "CalTrak.json";
 const DRIVE_FILE_ID_KEY = "calorie-tracker-drive-file-id";
 const CLIENT_ID_KEY = "calorie-tracker-google-client-id";
+const SESSION_KEY = "calorie-tracker-google-session";
 const DRIVE_SCOPE =
   "https://www.googleapis.com/auth/drive.file openid email profile";
+const TOKEN_EXPIRY_BUFFER_MS = 60_000;
 
 function getClientId() {
   const fromConfig = String(window.CALTRAK_GOOGLE_CLIENT_ID || "").trim();
@@ -28,9 +30,12 @@ function mergeDays(localDays, remoteDays) {
 
 window.CalTrakDrive = {
   token: null,
+  tokenExpiresAt: 0,
   tokenClient: null,
   email: null,
   saveTimer: null,
+  restoring: false,
+  gisWait: null,
   onStatus: () => {},
   onSignedIn: async () => {},
 
@@ -42,35 +47,103 @@ window.CalTrakDrive = {
     localStorage.setItem(CLIENT_ID_KEY, id.trim());
   },
 
+  readSession() {
+    try {
+      return JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+    } catch {
+      return null;
+    }
+  },
+
+  persistSession() {
+    if (!this.token) return;
+    localStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify({
+        token: this.token,
+        email: this.email,
+        expiresAt: this.tokenExpiresAt,
+      })
+    );
+  },
+
+  clearSession() {
+    localStorage.removeItem(SESSION_KEY);
+  },
+
+  applyToken(response) {
+    this.token = response.access_token;
+    const expiresIn = Number(response.expires_in);
+    this.tokenExpiresAt =
+      Date.now() + (Number.isFinite(expiresIn) && expiresIn > 0 ? expiresIn : 3600) * 1000;
+  },
+
   ready() {
     return Boolean(window.google?.accounts?.oauth2) && Boolean(this.clientId());
   },
 
   init() {
-    if (!this.ready()) return;
-    this.tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: this.clientId(),
-      scope: DRIVE_SCOPE,
-      callback: async (response) => {
-        if (response.error) {
-          this.onStatus("Google sign-in failed.");
-          return;
-        }
-        this.token = response.access_token;
-        try {
-          this.email = await this.fetchEmail();
-          this.onStatus(`Signed in as ${this.email}`);
-        } catch (error) {
-          this.email = null;
-          this.onStatus("Signed in with Google.");
-        }
-        try {
-          await this.onSignedIn();
-        } catch (error) {
-          this.onStatus(error.message || "Drive sync failed.");
-        }
-      },
-    });
+    if (!this.clientId()) return;
+    if (!window.google?.accounts?.oauth2) {
+      if (!this.gisWait) {
+        this.gisWait = window.setTimeout(() => {
+          this.gisWait = null;
+          this.init();
+        }, 250);
+      }
+      return;
+    }
+    if (!this.tokenClient) {
+      this.tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: this.clientId(),
+        scope: DRIVE_SCOPE,
+        callback: async (response) => {
+          const wasRestoring = this.restoring;
+          this.restoring = false;
+          if (response.error || !response.access_token) {
+            if (wasRestoring) {
+              this.onStatus("Sign in with Google to back up.");
+              return;
+            }
+            this.onStatus("Google sign-in failed.");
+            return;
+          }
+          this.applyToken(response);
+          try {
+            this.email = await this.fetchEmail();
+            this.onStatus(`Signed in as ${this.email}`);
+          } catch (error) {
+            this.email = this.email || null;
+            this.onStatus("Signed in with Google.");
+          }
+          this.persistSession();
+          try {
+            await this.onSignedIn();
+          } catch (error) {
+            this.onStatus(error.message || "Drive sync failed.");
+          }
+        },
+      });
+    }
+    this.restoreSession();
+  },
+
+  restoreSession() {
+    if (this.token) return;
+    const session = this.readSession();
+    if (!session?.token) return;
+    if (session.expiresAt && Date.now() < session.expiresAt - TOKEN_EXPIRY_BUFFER_MS) {
+      this.token = session.token;
+      this.tokenExpiresAt = session.expiresAt;
+      this.email = session.email || null;
+      this.onStatus(this.email ? `Signed in as ${this.email}` : "Signed in with Google.");
+      this.onSignedIn().catch((error) => {
+        this.onStatus(error.message || "Drive sync failed.");
+      });
+      return;
+    }
+    this.restoring = true;
+    this.tokenClient.requestAccessToken({ prompt: "" });
   },
 
   signIn() {
@@ -83,7 +156,10 @@ window.CalTrakDrive = {
       return;
     }
     if (!this.tokenClient) this.init();
-    this.tokenClient.requestAccessToken({ prompt: this.token ? "" : "consent" });
+    this.restoring = false;
+    this.tokenClient.requestAccessToken({
+      prompt: this.token || this.readSession() ? "" : "consent",
+    });
   },
 
   signOut() {
@@ -91,7 +167,9 @@ window.CalTrakDrive = {
       google.accounts.oauth2.revoke(this.token, () => {});
     }
     this.token = null;
+    this.tokenExpiresAt = 0;
     this.email = null;
+    this.clearSession();
     this.onStatus("Signed out. Data stays on this device.");
   },
 
@@ -117,7 +195,10 @@ window.CalTrakDrive = {
         const previous = this.tokenClient.callback;
         this.tokenClient.callback = (tokenResponse) => {
           this.tokenClient.callback = previous;
-          if (tokenResponse.access_token) this.token = tokenResponse.access_token;
+          if (tokenResponse.access_token) {
+            this.applyToken(tokenResponse);
+            this.persistSession();
+          }
           resolve();
         };
         this.tokenClient.requestAccessToken({ prompt: "" });
